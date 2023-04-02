@@ -47,36 +47,32 @@ def get_hours_and_pay(job_data, punch):
 
 def update_employee(punch_hours, rate, benefits_rate, employee):
     REGULAR_MAX = 40
-    OVERTIME_MAX = 8
-    OVERTIME_MULTIPLIER = 1.5
-    DOUBLETIME_MULTIPLIER = 2
+    OT_MAX = 8
+    OT_MULTIPLIER = 1.5
+    DT_MULTIPLIER = 2
 
     # Calculate & apply regular hours
-    regular_rollover_hours = (employee.regular + punch_hours) - REGULAR_MAX
-    if regular_rollover_hours > 0:
-        regular_hours_to_apply = punch_hours - regular_rollover_hours
+    regular_rollover = (employee.regular + punch_hours) - REGULAR_MAX
+    if regular_rollover > 0:
+        regular_to_apply = punch_hours - regular_rollover
     else:
-        regular_hours_to_apply = punch_hours
-    if regular_hours_to_apply > 0:
-        employee.wage_total += rate * regular_hours_to_apply
-        employee.regular += regular_hours_to_apply
+        regular_to_apply = punch_hours
+    if regular_to_apply > 0:
+        employee.wage_total += rate * regular_to_apply
+        employee.regular += regular_to_apply
     # Calculate & apply overtime hours
-    overtime_rollover_hours = (employee.overtime + regular_rollover_hours) \
-        - OVERTIME_MAX
-    if overtime_rollover_hours > 0:
-        overtime_hours_to_apply = regular_rollover_hours \
-            - overtime_rollover_hours
+    overtime_rollover = (employee.overtime + regular_rollover) - OT_MAX
+    if overtime_rollover > 0:
+        overtime_to_apply = regular_rollover - overtime_rollover
     else:
-        overtime_hours_to_apply = regular_rollover_hours
-    if overtime_hours_to_apply > 0:
-        employee.wage_total += (rate * OVERTIME_MULTIPLIER) \
-            * overtime_hours_to_apply
-        employee.overtime += overtime_hours_to_apply
+        overtime_to_apply = regular_rollover
+    if overtime_to_apply > 0:
+        employee.wage_total += (rate * OT_MULTIPLIER) * overtime_to_apply
+        employee.overtime += overtime_to_apply
     # Apply doubletime hours
-    if overtime_rollover_hours > 0:
-        employee.wage_total += (rate * DOUBLETIME_MULTIPLIER) \
-            * overtime_rollover_hours
-        employee.doubletime += overtime_rollover_hours
+    if overtime_rollover > 0:
+        employee.wage_total += (rate * DT_MULTIPLIER) * overtime_rollover
+        employee.doubletime += overtime_rollover
   
     employee.benefit_total += hours * benefits_rate
 
@@ -84,6 +80,7 @@ def update_employee(punch_hours, rate, benefits_rate, employee):
 
 ##### Program Start #####
 
+# TODO: Add unit tests
 # Get directory that the script is running from (not always the CWD)
 scriptDir = os.path.realpath(os.path.dirname(__file__))
 
@@ -102,11 +99,12 @@ for employee_obj in employee_data:
         if key == 'employee':
             employee_name = value
             active_employee = Employee(employee_name)
-        elif key == 'timePunch':
-            punch_list = employee_obj[key]
-            for punch in punch_list:
-                hours, rate, benefits_rate = get_hours_and_pay(job_data, punch)
-                update_employee(hours, rate, benefits_rate, active_employee)
+            continue
+        punch_list = employee_obj[key]
+        last_punch_index = len(punch_list) - 1
+        for punch in punch_list:
+            hours, rate, benefits_rate = get_hours_and_pay(job_data, punch)
+            update_employee(hours, rate, benefits_rate, active_employee)
 # TODO: else handle files which contain bad data
 # TODO: Handle when employee name already exists in employees
 # TODO: Make employee number values always use 4 decimal points (shorten
