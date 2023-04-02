@@ -2,13 +2,13 @@ import json, os
 from datetime import datetime
 
 class Employee():
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, employee_name):
+        self.employee = employee_name
         self.regular = 0
         self.overtime = 0
         self.doubletime = 0
-        self.wage_total = 0
-        self.benefit_total = 0
+        self.wageTotal = 0
+        self.benefitTotal = 0
 
 
 
@@ -23,10 +23,6 @@ def calc_job_hours(punch_start, punch_end):
     total_hours = timedelta_diff.total_seconds() / 3600
 
     return total_hours
-
-
-# def make_results_file():
-# TODO: Output to a .jsonc file
 
 
 def get_hours_and_pay(job_data, punch):
@@ -58,7 +54,7 @@ def update_employee(punch_hours, rate, benefits_rate, employee):
     else:
         regular_to_apply = punch_hours
     if regular_to_apply > 0:
-        employee.wage_total += rate * regular_to_apply
+        employee.wageTotal += rate * regular_to_apply
         employee.regular += regular_to_apply
     # Calculate & apply overtime hours
     overtime_rollover = (employee.overtime + regular_rollover) - OT_MAX
@@ -67,14 +63,14 @@ def update_employee(punch_hours, rate, benefits_rate, employee):
     else:
         overtime_to_apply = regular_rollover
     if overtime_to_apply > 0:
-        employee.wage_total += (rate * OT_MULTIPLIER) * overtime_to_apply
+        employee.wageTotal += (rate * OT_MULTIPLIER) * overtime_to_apply
         employee.overtime += overtime_to_apply
     # Apply doubletime hours
     if overtime_rollover > 0:
-        employee.wage_total += (rate * DT_MULTIPLIER) * overtime_rollover
+        employee.wageTotal += (rate * DT_MULTIPLIER) * overtime_rollover
         employee.doubletime += overtime_rollover
   
-    employee.benefit_total += hours * benefits_rate
+    employee.benefitTotal += hours * benefits_rate
 
 
 
@@ -90,6 +86,7 @@ f = open(f'{scriptDir}\PunchLogicData.json')
 data = json.load(f)
 employee_data = data['employeeData']
 job_data = data['jobMeta']
+f.close()
 
 # Process employee data
 employees = []
@@ -101,29 +98,24 @@ for employee_obj in employee_data:
             active_employee = Employee(employee_name)
             continue
         punch_list = employee_obj[key]
-        last_punch_index = len(punch_list) - 1
         for punch in punch_list:
             hours, rate, benefits_rate = get_hours_and_pay(job_data, punch)
             update_employee(hours, rate, benefits_rate, active_employee)
 # TODO: else handle files which contain bad data
 # TODO: Handle when employee name already exists in employees
-# TODO: Make employee number values always use 4 decimal points (shorten
-# longer ones & make 0 = 0.0000)
     employees.append(active_employee)
 
-f.close()
+# TODO: Output to a .jsonc file
 
-# make_results_file()
 
 # test
 for employee in employees:
     print(f'''\
-Employee: {employee.name}
+Employee: {employee.employee}
     regular: {employee.regular}
     overtime: {employee.overtime}
     doubletime: {employee.doubletime}
-    wageTotal: {employee.wage_total}
-    benefitTotal: {employee.benefit_total}
-    ''')
-input('test complete')
+    wageTotal: {employee.wageTotal}
+    benefitTotal: {employee.benefitTotal}''')
+input('\ntest complete')
 # 
