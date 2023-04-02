@@ -11,9 +11,17 @@ class Employee():
         self.benefitTotal = 0
 
 
+# TODO: Figure out syntax for dynamically looping through attributes
+    def format_decimals(self):
+        self.regular = '{:.4f}'.format(self.regular)
+        self.overtime = '{:.4f}'.format(self.overtime)
+        self.doubletime = '{:.4f}'.format(self.doubletime)
+        self.wageTotal = '{:.4f}'.format(self.wageTotal)
+        self.benefitTotal = '{:.4f}'.format(self.benefitTotal)
+
 
 def calc_job_hours(punch_start, punch_end):
-    # Incoming datetime example: 2022-02-18 12:29:33
+    # Punch datetime example: 2022-02-18 12:29:33
     datetime_format = '%Y-%m-%d %H:%M:%S'
     start_time = datetime.strptime(punch_start, datetime_format)
     end_time = datetime.strptime(punch_end, datetime_format)
@@ -25,7 +33,7 @@ def calc_job_hours(punch_start, punch_end):
     return total_hours
 
 
-def get_hours_and_pay(job_data, punch):
+def get_hours_and_rates(job_data, punch):
     job_worked = punch['job']
     punch_start = punch['start']
     punch_end = punch['end']
@@ -42,6 +50,11 @@ def get_hours_and_pay(job_data, punch):
 
 
 def update_employee(punch_hours, rate, benefits_rate, employee):
+    '''
+    For regular time then OT, calculate the total hours to apply to each
+    category or otherwise roll over to the next one. For DT, all OT rollover
+    is added to it with no calculations being performed
+    '''
     REGULAR_MAX = 40
     OT_MAX = 8
     OT_MULTIPLIER = 1.5
@@ -69,14 +82,15 @@ def update_employee(punch_hours, rate, benefits_rate, employee):
     if overtime_rollover > 0:
         employee.wageTotal += (rate * DT_MULTIPLIER) * overtime_rollover
         employee.doubletime += overtime_rollover
-  
+    # Always add benefits at same rate regardless of total hours worked
     employee.benefitTotal += hours * benefits_rate
 
 
 
 ##### Program Start #####
-
 # TODO: Add unit tests
+# TODO: Add type hints
+
 # Get directory that the script is running from (not always the CWD)
 scriptDir = os.path.realpath(os.path.dirname(__file__))
 
@@ -99,16 +113,19 @@ for employee_obj in employee_data:
             continue
         punch_list = employee_obj[key]
         for punch in punch_list:
-            hours, rate, benefits_rate = get_hours_and_pay(job_data, punch)
+            hours, rate, benefits_rate = get_hours_and_rates(job_data, punch)
             update_employee(hours, rate, benefits_rate, active_employee)
 # TODO: else handle files which contain bad data
 # TODO: Handle when employee name already exists in employees
     employees.append(active_employee)
 
+# Reduce decimal points after employees have all their punches added for
+# greater accuracy
+for employee in employees:
+    employee.format_decimals()
+
+# Display employee data & notify user that calculations are complete 
 # TODO: Output to a .jsonc file
-
-
-# test
 for employee in employees:
     print(f'''\
 Employee: {employee.employee}
@@ -117,5 +134,4 @@ Employee: {employee.employee}
     doubletime: {employee.doubletime}
     wageTotal: {employee.wageTotal}
     benefitTotal: {employee.benefitTotal}''')
-input('\ntest complete')
-# 
+input('\nEmployee punches have been calculated.\nPress Enter to exit')
